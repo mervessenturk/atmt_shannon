@@ -110,7 +110,7 @@ def main(args):
 
     model = models.build_model(args, src_tokenizer, tgt_tokenizer)
     logging.info('Built a model with {:d} parameters'.format(sum(p.numel() for p in model.parameters())))
-    criterion = nn.CrossEntropyLoss(ignore_index=src_tokenizer.pad_id(), reduction='sum')
+    criterion = nn.CrossEntropyLoss(ignore_index=tgt_tokenizer.pad_id(), reduction='sum')
 
     # Move model to GPU if available
     if args.cuda:
@@ -255,6 +255,32 @@ def main(args):
     logging.info('Final Test Set Results: BLEU {:.2f}'.format(bleu_score))
 
 
+    # --- NEU: Test-Übersetzungen speichern ---
+    suffix = args.warmup_strategy  # none / linear / constant
+    out_dir = os.path.join('experiments', 'task1_warmup', 'translations')
+    os.makedirs(out_dir, exist_ok=True)
+
+    hyp_path = os.path.join(out_dir, f'test.hyp.{suffix}.txt')
+    ref_path = os.path.join(out_dir, 'test.ref.txt')  # reicht einmal
+
+    with open(hyp_path, 'w', encoding='utf-8') as f:
+        for line in all_hypotheses:
+            f.write(line + '\n')
+
+    # Referenzen nur einmal speichern (wenn noch nicht existieren)
+    if not os.path.exists(ref_path):
+        with open(ref_path, 'w', encoding='utf-8') as f:
+            for line in all_references:
+                f.write(line + '\n')
+
+    logging.info(f'Saved hypotheses to {hyp_path}')
+    logging.info(f'(Optional) saved references to {ref_path}')
+    logging.info(f'Saved {len(all_hypotheses)} test hypotheses to {hyp_path}')
+
+    # --- Ende NEU ---
+
+
+
 def validate(args, model, criterion, valid_dataset, epoch,
              batch_fn: callable,
              src_tokenizer: spm.SentencePieceProcessor,
@@ -265,7 +291,7 @@ def validate(args, model, criterion, valid_dataset, epoch,
                                     batch_sampler=BatchSampler(valid_dataset, args.max_tokens, args.batch_size, 1, 0,
                                                                shuffle=False, seed=SEED))
     model.eval()
-m66mm6-m6    stats = OrderedDict()
+    stats = OrderedDict()
     stats['valid_loss'] = 0
     stats['num_tokens'] = 0
     stats['batch_size'] = 0
@@ -409,14 +435,18 @@ def evaluate(args, model, test_dataset,
 if __name__ == '__main__':
     args = get_args()
     args.seed = SEED
-    os.makedirs(os.path.dirname(args.log_file), exist_ok=True)
+    
+    if args.log_file:
+        logdir = os.path.dirname(args.log_file)
+        if logdir:  # nur wenn ein Ordneranteil existiert
+            os.makedirs(logdir, exist_ok=True)
 
-    # Set up logging to file
-    logging.basicConfig(filename=args.log_file, filemode='a', level=logging.INFO,
-                        format='%(levelname)s: %(message)s')
+    
+    
     if args.log_file is not None:
         # Logging to console
         console = logging.StreamHandler()
         console.setLevel(logging.INFO)
         logging.getLogger('').addHandler(console)
+        
     main(args)
