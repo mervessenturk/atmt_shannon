@@ -255,7 +255,7 @@ def main(args):
     logging.info('Final Test Set Results: BLEU {:.2f}'.format(bleu_score))
 
 
-    # --- NEU: Test-Übersetzungen speichern ---
+   
     suffix = args.warmup_strategy  # none / linear / constant
     out_dir = os.path.join('experiments', 'task1_warmup', 'translations')
     os.makedirs(out_dir, exist_ok=True)
@@ -277,7 +277,7 @@ def main(args):
     logging.info(f'(Optional) saved references to {ref_path}')
     logging.info(f'Saved {len(all_hypotheses)} test hypotheses to {hyp_path}')
 
-    # --- Ende NEU ---
+
 
 
 
@@ -402,7 +402,7 @@ def evaluate(args, model, test_dataset,
                 x=sample["src_tokens"], y=sample["tgt_tokens"]
             )
 
-            #-----------------------------------------
+            
             # Decode without teacher forcing
             prediction = decode(model=model,
                                       src_tokens=src_tokens,
@@ -411,7 +411,7 @@ def evaluate(args, model, test_dataset,
                                       tgt_tokenizer=tgt_tokenizer,
                                       args=args,
                                       device=device)
-            #----------------------------------------
+            
 
         # Collect hypotheses and references
         for ref, hyp in zip(sample["tgt_tokens"], prediction):
